@@ -13,6 +13,8 @@ import (
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
+var all bool
+
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -32,9 +34,19 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Here's a list of all your incomplete tasks\n")
-		for i, task := range tasks {
-			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+		if all {
+			fmt.Printf("Here's a list of all your tasks\n")
+		} else {
+			fmt.Printf("Here's a list of all your incomplete tasks\n")
+		}
+
+		i := 0
+		for _, task := range tasks {
+			if !all && !task.Completed.IsZero() {
+				continue
+			}
+			i += 1
+			fmt.Printf("%v. %v\n", i, taskUtil.Format(task))
 		}
 	},
 }
@@ -51,4 +63,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listCmd.Flags().BoolVarP(&all, "all", "a", false, "Include all completed or incomplete tasks")
 }
