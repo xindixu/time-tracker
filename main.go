@@ -1,7 +1,10 @@
+/*
+Copyright © 2022 Xindi Xu <xindixu0@gmail.com>
+*/
 package main
 
-import "fmt"
+import "github.com/xindixu/time-tracker/cmd"
 
 func main() {
-	fmt.Println("Happy time tracking!")
+	cmd.Execute()
 }
