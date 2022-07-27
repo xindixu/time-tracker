@@ -1,7 +1,6 @@
 package taskDB
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 
@@ -23,22 +22,16 @@ func AddTask(title string) (*models.Task, error) {
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
-		key, err := getTaskKeyByTitle(bucket, title)
-		if err != nil {
-			return err
-		}
-		if key != nil {
+		v := bucket.Get(key(title))
+		if v != nil {
 			return fmt.Errorf("task \"%s\" already exists", title)
 		}
-
-		id64, _ := bucket.NextSequence()
-		task.ID = int(id64)
 
 		encoded, err := json.Marshal(task)
 		if err != nil {
 			return err
 		}
-		err = bucket.Put(itob(task.ID), encoded)
+		err = bucket.Put([]byte(title), encoded)
 		return err
 	})
 
@@ -52,18 +45,12 @@ func CompleteTask(title string) (*models.Task, error) {
 	var task models.Task
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
-
-		key, err := getTaskKeyByTitle(bucket, title)
-		if err != nil {
-			return err
-		}
-		if key == nil {
+		v := bucket.Get(key(title))
+		if v == nil {
 			return fmt.Errorf("task \"%s\" not found", title)
 		}
 
-		v := bucket.Get(key)
-
-		err = json.Unmarshal(v, &task)
+		err := json.Unmarshal(v, &task)
 		if err != nil {
 			return err
 		}
@@ -73,7 +60,7 @@ func CompleteTask(title string) (*models.Task, error) {
 		if err != nil {
 			return err
 		}
-		return bucket.Put(key, encoded)
+		return bucket.Put(key(title), encoded)
 	})
 
 	return &task, err
@@ -82,24 +69,19 @@ func CompleteTask(title string) (*models.Task, error) {
 func DeleteTask(title string) (*models.Task, error) {
 	var task models.Task
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
 
-		key, err := getTaskKeyByTitle(bucket, title)
-		if err != nil {
-			return err
-		}
-		if key == nil {
+		bucket := tx.Bucket(taskBucket)
+		v := bucket.Get(key(title))
+		if v == nil {
 			return fmt.Errorf("task \"%s\" not found", title)
 		}
 
-		v := bucket.Get(key)
-
-		err = json.Unmarshal(v, &task)
+		err := json.Unmarshal(v, &task)
 		if err != nil {
 			return err
 		}
 
-		return bucket.Delete(key)
+		return bucket.Delete(key(title))
 	})
 
 	return &task, err
@@ -124,35 +106,8 @@ func ListTasks() ([]models.Task, error) {
 	return tasks, err
 }
 
-func getTaskKeyByTitle(bucket *bolt.Bucket, title string) ([]byte, error) {
-	var key []byte
-
-	cursor := bucket.Cursor()
-
-	for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
-		var task models.Task
-		err := json.Unmarshal(v, &task)
-		if err != nil {
-			return nil, err
-		}
-
-		if task.Title == title {
-			key = k
-			return key, nil
-		}
-	}
-
-	return nil, nil
-}
-
-func itob(v int) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(v))
-	return b
-}
-
-func btoi(b []byte) int {
-	return int(binary.BigEndian.Uint64(b))
+func key(s string) []byte {
+	return []byte(s)
 }
 
 func Setup(baseDb *bolt.DB) error {
