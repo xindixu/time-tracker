@@ -14,7 +14,7 @@ import (
 var taskBucket = []byte("tasks")
 var db *bolt.DB
 
-func AddTask(title string) error {
+func AddTask(title string) (*models.Task, error) {
 	task := &models.Task{
 		Created:   time.Now(),
 		Completed: time.Time{},
@@ -34,10 +34,13 @@ func AddTask(title string) error {
 		return err
 	})
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return task, err
 }
 
-func CompleteTask(title string) (models.Task, error) {
+func CompleteTask(title string) (*models.Task, error) {
 	var task models.Task
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
@@ -66,7 +69,7 @@ func CompleteTask(title string) (models.Task, error) {
 
 	})
 
-	return task, err
+	return &task, err
 }
 
 func ListTasks() ([]models.Task, error) {

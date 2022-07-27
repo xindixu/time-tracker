@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
@@ -20,6 +21,8 @@ var doneCmd = &cobra.Command{
 	Short: "Mark a task or a list of tasks as completed",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Completing task(s): %s...\n", strings.Join(args, ", "))
+
 		var tasks []models.Task
 		for _, v := range args {
 			task, err := taskDB.CompleteTask(v)
@@ -27,7 +30,9 @@ var doneCmd = &cobra.Command{
 				fmt.Printf("Something went wrong: %s\n", err)
 				os.Exit(1)
 			}
-			tasks = append(tasks, task)
+			if task != nil {
+				tasks = append(tasks, *task)
+			}
 		}
 
 		fmt.Printf("Completed task(s):\n")

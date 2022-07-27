@@ -16,9 +16,11 @@ import (
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List out all of incomplete tasks",
+	Short: "List out all of added tasks",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Listing all task...\n")
+
 		tasks, err := taskDB.ListTasks()
 		if err != nil {
 			fmt.Println("Something went wrong:", err)
@@ -34,7 +36,6 @@ var listCmd = &cobra.Command{
 		for i, task := range tasks {
 			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
 		}
-
 	},
 }
 
