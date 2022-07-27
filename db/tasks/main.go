@@ -23,6 +23,14 @@ func AddTask(title string) (*models.Task, error) {
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
+		key, err := getTaskKeyByTitle(bucket, title)
+		if err != nil {
+			return err
+		}
+		if key != nil {
+			return fmt.Errorf("task \"%s\" already exists", title)
+		}
+
 		id64, _ := bucket.NextSequence()
 		task.ID = int(id64)
 
@@ -50,7 +58,7 @@ func CompleteTask(title string) (*models.Task, error) {
 			return err
 		}
 		if key == nil {
-			return fmt.Errorf("task %s not found", title)
+			return fmt.Errorf("task \"%s\" not found", title)
 		}
 
 		v := bucket.Get(key)
