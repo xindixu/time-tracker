@@ -12,5 +12,5 @@ func Format(task models.Task) string {
 		completed = "  (done)"
 	}
 
-	return fmt.Sprintf("%v %v", task.Title, completed)
+	return fmt.Sprintf("%v%v", task.Title, completed)
 }

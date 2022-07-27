@@ -6,9 +6,12 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
+	"os"
 
 	"github.com/spf13/cobra"
+	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
+	"github.com/xindixu/todo-time-tracker/models"
+	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
 // doneCmd represents the done command
@@ -17,8 +20,20 @@ var doneCmd = &cobra.Command{
 	Short: "Mark a task or a list of tasks as completed",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Completed task(s): %s\n", strings.Join(args, ", "))
+		var tasks []models.Task
+		for _, v := range args {
+			task, err := taskDB.CompleteTask(v)
+			if err != nil {
+				fmt.Printf("Something went wrong: %s\n", err)
+				os.Exit(1)
+			}
+			tasks = append(tasks, task)
+		}
 
+		fmt.Printf("Completed task(s):\n")
+		for i, task := range tasks {
+			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+		}
 	},
 }
 
