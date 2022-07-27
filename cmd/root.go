@@ -8,8 +8,8 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "tt",
-	Short: "Simple CLI tool to help you keep track of time spent on a task",
+	Use:   "ttt",
+	Short: "Simple CLI tool to help you keep track of the tasks to do and the time spent on a task",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

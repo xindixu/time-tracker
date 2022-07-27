@@ -7,3 +7,6 @@ drop-db:
 	rm ${DB_NAME}
 
 reinit-db: drop-db setup-db
+
+build: setup-db
+	go build -o ttt
