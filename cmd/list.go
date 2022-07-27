@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/xindixu/todo-time-tracker/db"
 )
 
 // listCmd represents the list command
@@ -17,6 +18,7 @@ var listCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("Here's a list of all your incomplete tasks\n")
+		db.ListTasks()
 	},
 }
 
