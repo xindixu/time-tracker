@@ -6,9 +6,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/xindixu/todo-time-tracker/db"
+	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
+	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
 // listCmd represents the list command
@@ -17,8 +19,22 @@ var listCmd = &cobra.Command{
 	Short: "List out all of incomplete tasks",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		tasks, err := taskDB.ListTasks()
+		if err != nil {
+			fmt.Println("Something went wrong:", err)
+			os.Exit(1)
+		}
+
+		if len(tasks) == 0 {
+			fmt.Printf("You haven't added any task yet\n")
+			return
+		}
+
 		fmt.Printf("Here's a list of all your incomplete tasks\n")
-		db.ListTasks()
+		for i, task := range tasks {
+			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+		}
+
 	},
 }
 

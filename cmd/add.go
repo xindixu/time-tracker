@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/xindixu/todo-time-tracker/db"
+	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
 )
 
 // addCmd represents the add command
@@ -20,7 +20,7 @@ var addCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("Adding task(s): %s\n", strings.Join(args, ", "))
 		for _, v := range args {
-			db.AddTask(v)
+			taskDB.AddTask(v)
 		}
 	},
 }
