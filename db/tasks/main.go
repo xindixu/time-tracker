@@ -74,7 +74,32 @@ func CompleteTask(title string) (*models.Task, error) {
 			return err
 		}
 		return bucket.Put(key, encoded)
+	})
 
+	return &task, err
+}
+
+func DeleteTask(title string) (*models.Task, error) {
+	var task models.Task
+	err := db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(taskBucket)
+
+		key, err := getTaskKeyByTitle(bucket, title)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return fmt.Errorf("task \"%s\" not found", title)
+		}
+
+		v := bucket.Get(key)
+
+		err = json.Unmarshal(v, &task)
+		if err != nil {
+			return err
+		}
+
+		return bucket.Delete(key)
 	})
 
 	return &task, err
