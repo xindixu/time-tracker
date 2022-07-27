@@ -87,6 +87,30 @@ func DeleteTask(title string) (*models.Task, error) {
 	return &task, err
 }
 
+func CleanupTasks() error {
+	err := db.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(taskBucket)
+
+		err := bucket.ForEach(func(k, v []byte) error {
+			var task models.Task
+			err := json.Unmarshal(v, &task)
+			if err != nil {
+				return err
+			}
+			if !task.Completed.IsZero() {
+				err = bucket.Delete(key(task.Title))
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		return err
+	})
+	return err
+}
+
 func ListTasks() ([]models.Task, error) {
 	var tasks []models.Task
 

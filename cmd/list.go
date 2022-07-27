@@ -17,7 +17,7 @@ var listCmd = &cobra.Command{
 	Short: "List out all of added tasks",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Listing all task...\n")
+		fmt.Printf("Listing all tasks...\n")
 
 		tasks, err := taskDB.ListTasks()
 		if err != nil {
