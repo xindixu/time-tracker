@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/xindixu/todo-time-tracker/models"
+	m "github.com/xindixu/todo-time-tracker/models"
 )
 
-func Format(task models.Task) string {
+func Format(task m.Task) string {
 	completed := ""
 	if !task.Completed.IsZero() {
 		completed = "  (done)"
@@ -16,7 +16,7 @@ func Format(task models.Task) string {
 	return fmt.Sprintf("%v%v", task.Title, completed)
 }
 
-func ActionWithErrorHandling(action func() (*models.Task, error)) *models.Task {
+func ActionWithErrorHandling(action func() (*m.Task, error)) *m.Task {
 	task, err := action()
 	if err != nil {
 		fmt.Printf("Something went wrong: %s\n", err)
@@ -25,7 +25,7 @@ func ActionWithErrorHandling(action func() (*models.Task, error)) *models.Task {
 	return task
 }
 
-func BatchActionWithErrorHandling(action func() ([]*models.Task, error)) []*models.Task {
+func BatchActionWithErrorHandling(action func() ([]*m.Task, error)) []*m.Task {
 	tasks, err := action()
 	if err != nil {
 		fmt.Printf("Something went wrong: %s\n", err)

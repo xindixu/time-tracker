@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
+	sessionDB "github.com/xindixu/todo-time-tracker/db/sessions"
+	m "github.com/xindixu/todo-time-tracker/models"
+	sessionUtil "github.com/xindixu/todo-time-tracker/utils/sessions"
 )
 
 // startCmd represents the start command
@@ -13,7 +17,12 @@ var startCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var task = args[0]
-		fmt.Printf("Starting task %s. Have fun!\n", task)
+		now := time.Now()
+		session := sessionUtil.ActionWithErrorHandling(func() (*m.Session, error) {
+			return sessionDB.AddSession(now, task)
+		})
+
+		fmt.Printf("Started task %s at %s. Have fun!\n", session.Task, session.Started.Format(time.RubyDate))
 	},
 }
 

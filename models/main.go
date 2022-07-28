@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -34,4 +35,7 @@ func TaskKey(title string) []byte {
 }
 func SessionKey(started time.Time) []byte {
 	return []byte(started.Format(time.RFC3339))
+}
+func TaskSessionKey(title string, started time.Time) []byte {
+	return []byte(fmt.Sprintf("%v:%v", title, started.Format(time.RFC3339)))
 }
