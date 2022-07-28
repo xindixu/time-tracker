@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -16,11 +15,7 @@ func addBatch(args []string) {
 	var tasks []*models.Task
 
 	for _, v := range args {
-		task, err := taskDB.AddTask(v)
-		if err != nil {
-			fmt.Printf("Something went wrong: %s\n", err)
-			os.Exit(1)
-		}
+		task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.AddTask(v) })
 		if task != nil {
 			tasks = append(tasks, task)
 		}
@@ -35,12 +30,8 @@ func addBatch(args []string) {
 func addOne(args []string) {
 	title := strings.Join(args, " ")
 	fmt.Printf("Adding task: %s...\n", title)
-	task, err := taskDB.AddTask(title)
-	if err != nil {
-		fmt.Printf("Something went wrong: %s\n", err)
-		os.Exit(1)
-	}
 
+	task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.AddTask(title) })
 	fmt.Printf("Added task: %v\n", taskUtil.Format(*task))
 }
 
