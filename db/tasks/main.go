@@ -32,12 +32,20 @@ func update(bucket *bolt.Bucket, task *m.Task) error {
 	return nil
 }
 
+func IsTaskExist(bucket *bolt.Bucket, title string) (bool, []byte, error) {
+	v := bucket.Get(m.TaskKey(title))
+	if v != nil {
+		return true, v, fmt.Errorf("task \"%s\" already exists", title)
+	}
+	return false, v, fmt.Errorf("task \"%s\" not found", title)
+}
+
 // -----------------------------------
 
 func add(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	v := bucket.Get(m.TaskKey(title))
-	if v != nil {
-		return nil, fmt.Errorf("task \"%s\" already exists", title)
+	exist, _, err := IsTaskExist(bucket, title)
+	if exist {
+		return nil, err
 	}
 
 	task := &m.Task{
@@ -46,18 +54,18 @@ func add(bucket *bolt.Bucket, title string) (*m.Task, error) {
 		Title:     title,
 	}
 
-	err := update(bucket, task)
+	err = update(bucket, task)
 	return task, err
 }
 
 func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	v := bucket.Get(m.TaskKey(title))
-	if v == nil {
-		return nil, fmt.Errorf("task \"%s\" not found", title)
+	exist, v, err := IsTaskExist(bucket, title)
+	if !exist {
+		return nil, err
 	}
 
 	var task m.Task
-	err := json.Unmarshal(v, &task)
+	err = json.Unmarshal(v, &task)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +78,13 @@ func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
 }
 
 func delete(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	v := bucket.Get(m.TaskKey(title))
-	if v == nil {
-		return nil, fmt.Errorf("task \"%s\" not found", title)
+	exist, v, err := IsTaskExist(bucket, title)
+	if !exist {
+		return nil, err
 	}
 
 	var task m.Task
-	err := json.Unmarshal(v, &task)
+	err = json.Unmarshal(v, &task)
 	if err != nil {
 		return nil, err
 	}
