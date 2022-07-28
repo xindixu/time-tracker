@@ -236,8 +236,8 @@ func ListTasks() ([]models.Task, error) {
 	return tasks, err
 }
 
-func key(s string) []byte {
-	return []byte(s)
+func key(title string) []byte {
+	return []byte(title)
 }
 
 func Setup(baseDb *bolt.DB) error {

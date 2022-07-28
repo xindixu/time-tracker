@@ -7,3 +7,14 @@ type Task struct {
 	Completed time.Time
 	Title     string // PK
 }
+
+type Session struct {
+	Started time.Time // PK
+	Ended   time.Time
+	Task    string // FK(Task.Title)
+}
+
+type TaskSession struct {
+	Task    string    // FK(Task.Title)
+	Session time.Time // FK(Session.Started)
+}
