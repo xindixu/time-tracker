@@ -11,29 +11,50 @@ import (
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
+func addBatch(args []string) {
+	fmt.Printf("Adding task(s): %s...\n", strings.Join(args, ", "))
+	var tasks []*models.Task
+
+	for _, v := range args {
+		task, err := taskDB.AddTask(v)
+		if err != nil {
+			fmt.Printf("Something went wrong: %s\n", err)
+			os.Exit(1)
+		}
+		if task != nil {
+			tasks = append(tasks, task)
+		}
+	}
+
+	fmt.Printf("Added task(s):\n")
+	for i, task := range tasks {
+		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(*task))
+	}
+}
+
+func addOne(args []string) {
+	title := strings.Join(args, " ")
+	fmt.Printf("Adding task: %s...\n", title)
+	task, err := taskDB.AddTask(title)
+	if err != nil {
+		fmt.Printf("Something went wrong: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Added task: %v\n", taskUtil.Format(*task))
+}
+
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a task or a list of tasks",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Adding task(s): %s...\n", strings.Join(args, ", "))
-		var tasks []models.Task
-
-		for _, v := range args {
-			task, err := taskDB.AddTask(v)
-			if err != nil {
-				fmt.Printf("Something went wrong: %s\n", err)
-				os.Exit(1)
-			}
-			if task != nil {
-				tasks = append(tasks, *task)
-			}
-		}
-
-		fmt.Printf("Added task(s):\n")
-		for i, task := range tasks {
-			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+		batch, _ := cmd.Flags().GetBool("batch")
+		if batch {
+			addBatch(args)
+		} else {
+			addOne(args)
 		}
 	},
 }
@@ -50,4 +71,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addCmd.Flags().BoolP("batch", "b", false, "Add multiple tasks")
 }
