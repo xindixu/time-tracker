@@ -25,11 +25,7 @@ func update(bucket *bolt.Bucket, task *m.Task) error {
 	if err != nil {
 		return err
 	}
-	err = bucket.Put(m.TaskKey(task.Title), encoded)
-	if err != nil {
-		return err
-	}
-	return nil
+	return bucket.Put(m.TaskKey(task.Title), encoded)
 }
 
 func IsTaskExist(bucket *bolt.Bucket, title string) (bool, []byte, error) {

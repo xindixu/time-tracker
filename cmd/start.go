@@ -19,7 +19,7 @@ var startCmd = &cobra.Command{
 		var task = args[0]
 		now := time.Now()
 		session := sessionUtil.ActionWithErrorHandling(func() (*m.Session, error) {
-			return sessionDB.AddSession(now, task)
+			return sessionDB.StartSession(now, task)
 		})
 
 		fmt.Printf("Started task %s at %s. Have fun!\n", session.Task, session.Started.Format(time.RubyDate))

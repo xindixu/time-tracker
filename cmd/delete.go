@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
 	m "github.com/xindixu/todo-time-tracker/models"
-
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 

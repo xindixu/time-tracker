@@ -2,6 +2,7 @@ package taskDB
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -18,50 +19,85 @@ func Setup() error {
 	return err
 }
 
-func update(tx *bolt.Tx, session *m.Session) error {
-	sessionBucket := tx.Bucket(m.SessionBucketName)
-	taskBucket := tx.Bucket(m.TaskBucketName)
-	taskSessionBucket := tx.Bucket(m.TaskSessionBucketName)
-
-	exist, _, err := TaskDB.IsTaskExist(taskBucket, session.Task)
-	if !exist {
-		return err
-	}
-
+func update(bucket *bolt.Bucket, session *m.Session) error {
 	encoded, err := json.Marshal(session)
 	if err != nil {
 		return err
 	}
-	err = sessionBucket.Put(m.SessionKey(session.Started), encoded)
-	if err != nil {
-		return err
-	}
-	err = taskSessionBucket.Put(m.TaskSessionKey(session.Task, session.Started), []byte{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return bucket.Put(m.SessionKey(session.Started), encoded)
 }
 
 // -----------------------------------
 
-func add(tx *bolt.Tx, started time.Time, task string) (*m.Session, error) {
+func start(tx *bolt.Tx, started time.Time, task string) (*m.Session, error) {
+	taskBucket := tx.Bucket(m.TaskBucketName)
+	exist, _, err := TaskDB.IsTaskExist(taskBucket, task)
+	if !exist {
+		return nil, err
+	}
+
 	session := &m.Session{
 		Started: started,
 		Ended:   time.Time{},
 		Task:    task,
 	}
 
-	err := update(tx, session)
+	err = update(tx.Bucket(m.SessionBucketName), session)
+	if err != nil {
+		return session, err
+	}
+
+	taskSessionBucket := tx.Bucket(m.TaskSessionBucketName)
+	err = taskSessionBucket.Put(m.TaskSessionKey(session.Task, session.Started), []byte{})
+	if err != nil {
+		return session, err
+	}
+
 	return session, err
 }
 
-func AddSession(started time.Time, task string) (*m.Session, error) {
+func StartSession(started time.Time, task string) (*m.Session, error) {
 	var session *m.Session
 	var err error
 	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
-		session, err = add(tx, started, task)
+		session, err = start(tx, started, task)
 		return err
+	})
+	return session, err
+}
+
+func GetActiveSession() (*m.Session, error) {
+	var session *m.Session
+	var err error
+	err = m.TTTDB.View(func(tx *bolt.Tx) error {
+		sessionBucket := tx.Bucket(m.SessionBucketName)
+		_, v := sessionBucket.Cursor().Last()
+
+		if v == nil {
+			return fmt.Errorf("no active session")
+		}
+		err = json.Unmarshal(v, &session)
+		if err != nil {
+			return err
+		}
+		if !session.Ended.IsZero() {
+			return fmt.Errorf("no active session")
+		}
+		return err
+	})
+	return session, err
+}
+
+func EndSession(ended time.Time) (*m.Session, error) {
+	session, err := GetActiveSession()
+	if err != nil {
+		return session, err
+	}
+
+	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
+		session.Ended = ended
+		bucket := tx.Bucket(m.SessionBucketName)
+		return update(bucket, session)
 	})
 	return session, err
 }
