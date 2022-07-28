@@ -13,17 +13,11 @@ import (
 func deleteBatch(args []string) {
 	fmt.Printf("Deleting task(s): %s...\n", strings.Join(args, ", "))
 
-	var tasks []models.Task
-	for _, title := range args {
-		task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.DeleteTask(title) })
-		if task != nil {
-			tasks = append(tasks, *task)
-		}
-	}
+	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchDeleteTasks(args) })
 
 	fmt.Printf("Deleted task(s):\n")
 	for i, task := range tasks {
-		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(*task))
 	}
 }
 

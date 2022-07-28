@@ -63,6 +63,22 @@ func complete(bucket *bolt.Bucket, title string) (*models.Task, error) {
 	return &task, err
 }
 
+func delete(bucket *bolt.Bucket, title string) (*models.Task, error) {
+	v := bucket.Get(key(title))
+	if v == nil {
+		return nil, fmt.Errorf("task \"%s\" not found", title)
+	}
+
+	var task models.Task
+	err := json.Unmarshal(v, &task)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bucket.Delete(key(title))
+	return &task, err
+}
+
 // -----------------------------------
 
 func AddTask(title string) (*models.Task, error) {
@@ -84,7 +100,17 @@ func CompleteTask(title string) (*models.Task, error) {
 		task, err = complete(bucket, title)
 		return err
 	})
+	return task, err
+}
 
+func DeleteTask(title string) (*models.Task, error) {
+	var task *models.Task
+	var err error
+	err = db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(taskBucket)
+		task, err = delete(bucket, title)
+		return err
+	})
 	return task, err
 }
 
@@ -142,25 +168,29 @@ func BatchCompleteTasks(titles []string) ([]*models.Task, error) {
 	return tasks, err
 }
 
-func DeleteTask(title string) (*models.Task, error) {
-	var task models.Task
-	err := db.Update(func(tx *bolt.Tx) error {
-
+func BatchDeleteTasks(titles []string) ([]*models.Task, error) {
+	tasks := make([]*models.Task, len(titles))
+	err := db.Batch(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
-		v := bucket.Get(key(title))
-		if v == nil {
-			return fmt.Errorf("task \"%s\" not found", title)
-		}
 
-		err := json.Unmarshal(v, &task)
-		if err != nil {
+		g := new(errgroup.Group)
+
+		for i, title := range titles {
+			func(i int, title string) {
+				g.Go(func() error {
+					task, err := delete(bucket, title)
+					tasks[i] = task
+					return err
+				})
+			}(i, title)
+		}
+		if err := g.Wait(); err != nil {
 			return err
 		}
 
-		return bucket.Delete(key(title))
+		return nil
 	})
-
-	return &task, err
+	return tasks, err
 }
 
 func CleanupTasks() error {
