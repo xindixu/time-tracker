@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -11,30 +10,44 @@ import (
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
+func deleteBatch(args []string) {
+	fmt.Printf("Deleting task(s): %s...\n", strings.Join(args, ", "))
+
+	var tasks []models.Task
+	for _, title := range args {
+		task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.DeleteTask(title) })
+		if task != nil {
+			tasks = append(tasks, *task)
+		}
+	}
+
+	fmt.Printf("Deleted task(s):\n")
+	for i, task := range tasks {
+		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+	}
+}
+
+func deleteOne(args []string) {
+	title := strings.Join(args, " ")
+	fmt.Printf("Deleting task: %s...\n", title)
+
+	task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.DeleteTask(title) })
+	fmt.Printf("Deleted task: %v\n", taskUtil.Format(*task))
+}
+
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete a task or a list of tasks",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Deleting task(s): %s...\n", strings.Join(args, ", "))
-
-		var tasks []models.Task
-		for _, v := range args {
-			task, err := taskDB.DeleteTask(v)
-			if err != nil {
-				fmt.Printf("Something went wrong: %s\n", err)
-				os.Exit(1)
-			}
-			if task != nil {
-				tasks = append(tasks, *task)
-			}
+		batch, _ := cmd.Flags().GetBool("batch")
+		if batch {
+			deleteBatch(args)
+		} else {
+			deleteOne(args)
 		}
 
-		fmt.Printf("Deleted task(s):\n")
-		for i, task := range tasks {
-			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
-		}
 	},
 }
 
@@ -50,4 +63,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	deleteCmd.Flags().BoolP("batch", "b", false, "Delete multiple tasks")
 }

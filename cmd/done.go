@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -11,30 +10,44 @@ import (
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
+func doneBatch(args []string) {
+	fmt.Printf("Completing task(s): %s...\n", strings.Join(args, ", "))
+
+	var tasks []models.Task
+	for _, title := range args {
+		task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.CompleteTask(title) })
+		if task != nil {
+			tasks = append(tasks, *task)
+		}
+	}
+
+	fmt.Printf("Completed task(s):\n")
+	for i, task := range tasks {
+		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
+	}
+}
+
+func doneOne(args []string) {
+	title := strings.Join(args, " ")
+	fmt.Printf("Completing task: %s...\n", title)
+
+	task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.CompleteTask(title) })
+	fmt.Printf("Completed task: %v\n", taskUtil.Format(*task))
+}
+
 // doneCmd represents the done command
 var doneCmd = &cobra.Command{
 	Use:   "done",
 	Short: "Mark a task or a list of tasks as completed",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Completing task(s): %s...\n", strings.Join(args, ", "))
-
-		var tasks []models.Task
-		for _, v := range args {
-			task, err := taskDB.CompleteTask(v)
-			if err != nil {
-				fmt.Printf("Something went wrong: %s\n", err)
-				os.Exit(1)
-			}
-			if task != nil {
-				tasks = append(tasks, *task)
-			}
+		batch, _ := cmd.Flags().GetBool("batch")
+		if batch {
+			doneBatch(args)
+		} else {
+			doneOne(args)
 		}
 
-		fmt.Printf("Completed task(s):\n")
-		for i, task := range tasks {
-			fmt.Printf("%v. %v\n", i+1, taskUtil.Format(task))
-		}
 	},
 }
 
@@ -50,4 +63,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// doneCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	doneCmd.Flags().BoolP("batch", "b", false, "Mark multiple tasks as done")
 }
