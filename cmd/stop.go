@@ -2,18 +2,28 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
+	sessionDB "github.com/xindixu/todo-time-tracker/db/sessions"
+	m "github.com/xindixu/todo-time-tracker/models"
+	sessionUtil "github.com/xindixu/todo-time-tracker/utils/sessions"
 )
 
 // stopCmd represents the stop command
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop the timer for a task",
-	Args:  cobra.ExactArgs(1),
+	Short: "Stop the timer for the current task",
 	Run: func(cmd *cobra.Command, args []string) {
-		var task = args[0]
-		fmt.Printf("Stopping task: %s. Great work!\n", task)
+		now := time.Now()
+
+		session := sessionUtil.ActionWithErrorHandling(func() (*m.Session, error) {
+			return sessionDB.EndSession(now)
+		})
+
+		fmt.Printf("Stopped task %s at %s.\n", session.Task, session.Ended.Format(time.RubyDate))
+		fmt.Printf("Time spent: %s.\n", session.Ended.Sub(session.Started).Round(time.Second))
+		fmt.Printf("Great work! Now go take some rest.\n")
 	},
 }
 
