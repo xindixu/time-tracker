@@ -6,14 +6,14 @@ import (
 
 	"github.com/spf13/cobra"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
-	"github.com/xindixu/todo-time-tracker/models"
+	m "github.com/xindixu/todo-time-tracker/models"
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
 func doneBatch(args []string) {
 	fmt.Printf("Completing task(s): %s...\n", strings.Join(args, ", "))
 
-	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchCompleteTasks(args) })
+	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*m.Task, error) { return taskDB.BatchCompleteTasks(args) })
 
 	fmt.Printf("Completed task(s):\n")
 	for i, task := range tasks {
@@ -25,7 +25,7 @@ func doneOne(args []string) {
 	title := strings.Join(args, " ")
 	fmt.Printf("Completing task: %s...\n", title)
 
-	task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.CompleteTask(title) })
+	task := taskUtil.ActionWithErrorHandling(func() (*m.Task, error) { return taskDB.CompleteTask(title) })
 	fmt.Printf("Completed task: %v\n", taskUtil.Format(*task))
 }
 

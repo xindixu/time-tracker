@@ -6,14 +6,15 @@ import (
 
 	"github.com/spf13/cobra"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
-	"github.com/xindixu/todo-time-tracker/models"
+	m "github.com/xindixu/todo-time-tracker/models"
+
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
 func deleteBatch(args []string) {
 	fmt.Printf("Deleting task(s): %s...\n", strings.Join(args, ", "))
 
-	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchDeleteTasks(args) })
+	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*m.Task, error) { return taskDB.BatchDeleteTasks(args) })
 
 	fmt.Printf("Deleted task(s):\n")
 	for i, task := range tasks {
@@ -25,7 +26,7 @@ func deleteOne(args []string) {
 	title := strings.Join(args, " ")
 	fmt.Printf("Deleting task: %s...\n", title)
 
-	task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.DeleteTask(title) })
+	task := taskUtil.ActionWithErrorHandling(func() (*m.Task, error) { return taskDB.DeleteTask(title) })
 	fmt.Printf("Deleted task: %v\n", taskUtil.Format(*task))
 }
 

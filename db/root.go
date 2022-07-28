@@ -5,12 +5,12 @@ import (
 	sessionDB "github.com/xindixu/todo-time-tracker/db/sessions"
 	taskSessionDB "github.com/xindixu/todo-time-tracker/db/task-sessions"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
-	models "github.com/xindixu/todo-time-tracker/models"
+	m "github.com/xindixu/todo-time-tracker/models"
 )
 
 func InitDB() error {
 	var err error
-	models.TTTDB, err = bolt.Open("todo-time-tracker.db", 0600, nil)
+	m.TTTDB, err = bolt.Open("todo-time-tracker.db", 0600, nil)
 	if err != nil {
 		return err
 	}
