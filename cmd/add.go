@@ -12,14 +12,8 @@ import (
 
 func addBatch(args []string) {
 	fmt.Printf("Adding task(s): %s...\n", strings.Join(args, ", "))
-	var tasks []*models.Task
 
-	for _, title := range args {
-		task := taskUtil.ActionWithErrorHandling(func() (*models.Task, error) { return taskDB.AddTask(title) })
-		if task != nil {
-			tasks = append(tasks, task)
-		}
-	}
+	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchAddTask(args) })
 
 	fmt.Printf("Added task(s):\n")
 	for i, task := range tasks {

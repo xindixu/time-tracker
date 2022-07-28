@@ -24,3 +24,12 @@ func ActionWithErrorHandling(action func() (*models.Task, error)) *models.Task {
 	}
 	return task
 }
+
+func BatchActionWithErrorHandling(action func() ([]*models.Task, error)) []*models.Task {
+	tasks, err := action()
+	if err != nil {
+		fmt.Printf("Something went wrong: %s\n", err)
+		os.Exit(1)
+	}
+	return tasks
+}

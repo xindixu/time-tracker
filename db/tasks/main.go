@@ -13,6 +13,18 @@ import (
 var taskBucket = []byte("tasks")
 var db *bolt.DB
 
+func update(bucket *bolt.Bucket, task *models.Task) error {
+	encoded, err := json.Marshal(task)
+	if err != nil {
+		return err
+	}
+	err = bucket.Put([]byte(task.Title), encoded)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func AddTask(title string) (*models.Task, error) {
 	task := &models.Task{
 		Created:   time.Now(),
@@ -27,18 +39,46 @@ func AddTask(title string) (*models.Task, error) {
 			return fmt.Errorf("task \"%s\" already exists", title)
 		}
 
-		encoded, err := json.Marshal(task)
-		if err != nil {
-			return err
-		}
-		err = bucket.Put([]byte(title), encoded)
-		return err
+		return update(bucket, task)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 	return task, err
+}
+
+func BatchAddTask(titles []string) ([]*models.Task, error) {
+	tasks := make([]*models.Task, len(titles))
+
+	err := db.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(taskBucket)
+		var err error
+		for i, title := range titles {
+			task := &models.Task{
+				Created:   time.Now(),
+				Completed: time.Time{},
+				Title:     title,
+			}
+			tasks[i] = task
+
+			v := bucket.Get(key(title))
+			if v != nil {
+				return fmt.Errorf("task \"%s\" already exists", title)
+			}
+
+			err := update(bucket, task)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return tasks, err
 }
 
 func CompleteTask(title string) (*models.Task, error) {
@@ -56,11 +96,7 @@ func CompleteTask(title string) (*models.Task, error) {
 		}
 
 		task.Completed = time.Now()
-		encoded, err := json.Marshal(task)
-		if err != nil {
-			return err
-		}
-		return bucket.Put(key(title), encoded)
+		return update(bucket, &task)
 	})
 
 	return &task, err
