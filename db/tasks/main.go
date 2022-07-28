@@ -7,19 +7,25 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/xindixu/todo-time-tracker/models"
+	m "github.com/xindixu/todo-time-tracker/models"
 	"golang.org/x/sync/errgroup"
 )
 
-var taskBucket = []byte("tasks")
-var db *bolt.DB
+func Setup() error {
+	err := m.TTTDB.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(m.TaskBucketName)
+		return err
+	})
 
-func update(bucket *bolt.Bucket, task *models.Task) error {
+	return err
+}
+
+func update(bucket *bolt.Bucket, task *m.Task) error {
 	encoded, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
-	err = bucket.Put([]byte(task.Title), encoded)
+	err = bucket.Put(m.TaskKey(task.Title), encoded)
 	if err != nil {
 		return err
 	}
@@ -28,13 +34,13 @@ func update(bucket *bolt.Bucket, task *models.Task) error {
 
 // -----------------------------------
 
-func add(bucket *bolt.Bucket, title string) (*models.Task, error) {
-	v := bucket.Get(key(title))
+func add(bucket *bolt.Bucket, title string) (*m.Task, error) {
+	v := bucket.Get(m.TaskKey(title))
 	if v != nil {
 		return nil, fmt.Errorf("task \"%s\" already exists", title)
 	}
 
-	task := &models.Task{
+	task := &m.Task{
 		Created:   time.Now(),
 		Completed: time.Time{},
 		Title:     title,
@@ -44,13 +50,13 @@ func add(bucket *bolt.Bucket, title string) (*models.Task, error) {
 	return task, err
 }
 
-func complete(bucket *bolt.Bucket, title string) (*models.Task, error) {
-	v := bucket.Get(key(title))
+func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
+	v := bucket.Get(m.TaskKey(title))
 	if v == nil {
 		return nil, fmt.Errorf("task \"%s\" not found", title)
 	}
 
-	var task models.Task
+	var task m.Task
 	err := json.Unmarshal(v, &task)
 	if err != nil {
 		return nil, err
@@ -63,51 +69,51 @@ func complete(bucket *bolt.Bucket, title string) (*models.Task, error) {
 	return &task, err
 }
 
-func delete(bucket *bolt.Bucket, title string) (*models.Task, error) {
-	v := bucket.Get(key(title))
+func delete(bucket *bolt.Bucket, title string) (*m.Task, error) {
+	v := bucket.Get(m.TaskKey(title))
 	if v == nil {
 		return nil, fmt.Errorf("task \"%s\" not found", title)
 	}
 
-	var task models.Task
+	var task m.Task
 	err := json.Unmarshal(v, &task)
 	if err != nil {
 		return nil, err
 	}
 
-	err = bucket.Delete(key(title))
+	err = bucket.Delete(m.TaskKey(title))
 	return &task, err
 }
 
 // -----------------------------------
 
-func AddTask(title string) (*models.Task, error) {
-	var task *models.Task
+func AddTask(title string) (*m.Task, error) {
+	var task *m.Task
 	var err error
-	err = db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 		task, err = add(bucket, title)
 		return err
 	})
 	return task, err
 }
 
-func CompleteTask(title string) (*models.Task, error) {
-	var task *models.Task
+func CompleteTask(title string) (*m.Task, error) {
+	var task *m.Task
 	var err error
-	err = db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 		task, err = complete(bucket, title)
 		return err
 	})
 	return task, err
 }
 
-func DeleteTask(title string) (*models.Task, error) {
-	var task *models.Task
+func DeleteTask(title string) (*m.Task, error) {
+	var task *m.Task
 	var err error
-	err = db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 		task, err = delete(bucket, title)
 		return err
 	})
@@ -116,11 +122,11 @@ func DeleteTask(title string) (*models.Task, error) {
 
 // -----------------------------------
 
-func BatchAddTasks(titles []string) ([]*models.Task, error) {
-	tasks := make([]*models.Task, len(titles))
+func BatchAddTasks(titles []string) ([]*m.Task, error) {
+	tasks := make([]*m.Task, len(titles))
 
-	err := db.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 
 		g := new(errgroup.Group)
 
@@ -143,10 +149,10 @@ func BatchAddTasks(titles []string) ([]*models.Task, error) {
 	return tasks, err
 }
 
-func BatchCompleteTasks(titles []string) ([]*models.Task, error) {
-	tasks := make([]*models.Task, len(titles))
-	err := db.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+func BatchCompleteTasks(titles []string) ([]*m.Task, error) {
+	tasks := make([]*m.Task, len(titles))
+	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 
 		g := new(errgroup.Group)
 
@@ -168,10 +174,10 @@ func BatchCompleteTasks(titles []string) ([]*models.Task, error) {
 	return tasks, err
 }
 
-func BatchDeleteTasks(titles []string) ([]*models.Task, error) {
-	tasks := make([]*models.Task, len(titles))
-	err := db.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+func BatchDeleteTasks(titles []string) ([]*m.Task, error) {
+	tasks := make([]*m.Task, len(titles))
+	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 
 		g := new(errgroup.Group)
 
@@ -194,17 +200,17 @@ func BatchDeleteTasks(titles []string) ([]*models.Task, error) {
 }
 
 func CleanupTasks() error {
-	err := db.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 
 		err := bucket.ForEach(func(k, v []byte) error {
-			var task models.Task
+			var task m.Task
 			err := json.Unmarshal(v, &task)
 			if err != nil {
 				return err
 			}
 			if !task.Completed.IsZero() {
-				err = bucket.Delete(key(task.Title))
+				err = bucket.Delete(m.TaskKey(task.Title))
 				if err != nil {
 					return err
 				}
@@ -217,13 +223,13 @@ func CleanupTasks() error {
 	return err
 }
 
-func ListTasks() ([]models.Task, error) {
-	var tasks []models.Task
+func ListTasks() ([]m.Task, error) {
+	var tasks []m.Task
 
-	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
+	err := m.TTTDB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.TaskBucketName)
 		bucket.ForEach(func(k, v []byte) error {
-			var task models.Task
+			var task m.Task
 			err := json.Unmarshal(v, &task)
 			if err != nil {
 				return err
@@ -234,18 +240,4 @@ func ListTasks() ([]models.Task, error) {
 		return nil
 	})
 	return tasks, err
-}
-
-func key(title string) []byte {
-	return []byte(title)
-}
-
-func Setup(baseDb *bolt.DB) error {
-	db = baseDb
-	err := baseDb.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(taskBucket)
-		return err
-	})
-
-	return err
 }
