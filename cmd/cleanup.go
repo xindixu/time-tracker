@@ -39,7 +39,7 @@ var cleanupCmd = &cobra.Command{
 		fmt.Printf("Removed all completed tasks. Here's the remaining tasks:\n")
 		i := 0
 		for _, task := range tasks {
-			if !all && !task.Completed.IsZero() {
+			if !task.Completed.IsZero() {
 				continue
 			}
 			i += 1
