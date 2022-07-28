@@ -13,7 +13,7 @@ import (
 func addBatch(args []string) {
 	fmt.Printf("Adding task(s): %s...\n", strings.Join(args, ", "))
 
-	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchAddTask(args) })
+	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*models.Task, error) { return taskDB.BatchAddTasks(args) })
 
 	fmt.Printf("Added task(s):\n")
 	for i, task := range tasks {

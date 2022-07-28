@@ -8,6 +8,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/xindixu/todo-time-tracker/models"
+	"golang.org/x/sync/errgroup"
 )
 
 var taskBucket = []byte("tasks")
@@ -24,6 +25,8 @@ func update(bucket *bolt.Bucket, task *models.Task) error {
 	}
 	return nil
 }
+
+// -----------------------------------
 
 func add(bucket *bolt.Bucket, title string) (*models.Task, error) {
 	v := bucket.Get(key(title))
@@ -52,45 +55,31 @@ func AddTask(title string) (*models.Task, error) {
 	return task, err
 }
 
-func BatchAddTask(titles []string) ([]*models.Task, error) {
+func BatchAddTasks(titles []string) ([]*models.Task, error) {
 	tasks := make([]*models.Task, len(titles))
 
 	err := db.Batch(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(taskBucket)
-		var task *models.Task
-		var err error
+
+		g := new(errgroup.Group)
+
 		for i, title := range titles {
-			task, err = add(bucket, title)
-			tasks[i] = task
-			if err != nil {
-				return err
-			}
+			func(i int, title string) {
+				g.Go(func() error {
+					task, err := add(bucket, title)
+					tasks[i] = task
+					return err
+				})
+			}(i, title)
 		}
-		return err
-	})
-
-	return tasks, err
-}
-
-func CompleteTask(title string) (*models.Task, error) {
-	var task models.Task
-	err := db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(taskBucket)
-		v := bucket.Get(key(title))
-		if v == nil {
-			return fmt.Errorf("task \"%s\" not found", title)
-		}
-
-		err := json.Unmarshal(v, &task)
-		if err != nil {
+		if err := g.Wait(); err != nil {
 			return err
 		}
 
-		task.Completed = time.Now()
-		return update(bucket, &task)
+		return nil
 	})
 
-	return &task, err
+	return tasks, err
 }
 
 func DeleteTask(title string) (*models.Task, error) {
