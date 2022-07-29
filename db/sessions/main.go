@@ -101,3 +101,22 @@ func EndSession(ended time.Time) (*m.Session, error) {
 	})
 	return session, err
 }
+
+func ListSessions() ([]m.Session, error) {
+	var sessions []m.Session
+
+	err := m.TTTDB.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(m.SessionBucketName)
+		bucket.ForEach(func(k, v []byte) error {
+			var session m.Session
+			err := json.Unmarshal(v, &session)
+			if err != nil {
+				return err
+			}
+			sessions = append(sessions, session)
+			return nil
+		})
+		return nil
+	})
+	return sessions, err
+}
