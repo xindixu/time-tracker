@@ -56,10 +56,30 @@ func start(tx *bolt.Tx, started time.Time, task string) (*m.Session, error) {
 	return session, err
 }
 
+func HasActiveSession(bucket *bolt.Bucket) (bool, []byte, error) {
+	_, v := bucket.Cursor().Last()
+	if v == nil {
+		return false, nil, fmt.Errorf("no session found")
+	}
+	var session m.Session
+	err := json.Unmarshal(v, &session)
+	if err != nil {
+		return false, nil, fmt.Errorf("can't unmarshal session")
+	}
+	if session.Ended.IsZero() {
+		return true, v, fmt.Errorf("already has an active session")
+	}
+	return false, v, fmt.Errorf("no active session")
+}
+
 func StartSession(started time.Time, task string) (*m.Session, error) {
 	var session *m.Session
-	var err error
-	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
+	err := m.TTTDB.Update(func(tx *bolt.Tx) error {
+		active, _, err := HasActiveSession(tx.Bucket(m.SessionBucketName))
+		if active {
+			return err
+		}
+
 		session, err = start(tx, started, task)
 		return err
 	})
@@ -67,25 +87,21 @@ func StartSession(started time.Time, task string) (*m.Session, error) {
 }
 
 func GetActiveSession() (*m.Session, error) {
-	var session *m.Session
-	var err error
-	err = m.TTTDB.View(func(tx *bolt.Tx) error {
-		sessionBucket := tx.Bucket(m.SessionBucketName)
-		_, v := sessionBucket.Cursor().Last()
+	var session m.Session
 
-		if v == nil {
-			return fmt.Errorf("no active session")
+	err := m.TTTDB.View(func(tx *bolt.Tx) error {
+		active, v, err := HasActiveSession(tx.Bucket(m.SessionBucketName))
+		if !active {
+			return err
 		}
+
 		err = json.Unmarshal(v, &session)
 		if err != nil {
 			return err
 		}
-		if !session.Ended.IsZero() {
-			return fmt.Errorf("no active session")
-		}
 		return err
 	})
-	return session, err
+	return &session, err
 }
 
 func EndSession(ended time.Time) (*m.Session, error) {

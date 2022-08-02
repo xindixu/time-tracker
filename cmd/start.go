@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,9 +15,12 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the timer for a task",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var task = args[0]
+		task := strings.Join(args, " ")
+
+		fmt.Printf("Starting a new session for task: %s...\n", task)
+
 		now := time.Now()
 		session := sessionUtil.ActionWithErrorHandling(func() (*m.Session, error) {
 			return sessionDB.StartSession(now, task)
