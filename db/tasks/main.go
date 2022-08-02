@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	h "github.com/xindixu/todo-time-tracker/db/helper"
+	sessionDB "github.com/xindixu/todo-time-tracker/db/sessions"
+	taskSessionDB "github.com/xindixu/todo-time-tracker/db/task-sessions"
 	m "github.com/xindixu/todo-time-tracker/models"
 	"golang.org/x/sync/errgroup"
 )
@@ -28,18 +31,10 @@ func update(bucket *bolt.Bucket, task *m.Task) error {
 	return bucket.Put(m.TaskKey(task.Title), encoded)
 }
 
-func IsTaskExist(bucket *bolt.Bucket, title string) (bool, []byte, error) {
-	v := bucket.Get(m.TaskKey(title))
-	if v != nil {
-		return true, v, fmt.Errorf("task \"%s\" already exists", title)
-	}
-	return false, v, fmt.Errorf("task \"%s\" not found", title)
-}
-
 // -----------------------------------
 
 func add(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	exist, _, err := IsTaskExist(bucket, title)
+	exist, _, err := h.IsTaskExist(bucket, title)
 	if exist {
 		return nil, err
 	}
@@ -55,7 +50,7 @@ func add(bucket *bolt.Bucket, title string) (*m.Task, error) {
 }
 
 func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	exist, v, err := IsTaskExist(bucket, title)
+	exist, v, err := h.IsTaskExist(bucket, title)
 	if !exist {
 		return nil, err
 	}
@@ -73,8 +68,12 @@ func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
 	return &task, err
 }
 
-func delete(bucket *bolt.Bucket, title string) (*m.Task, error) {
-	exist, v, err := IsTaskExist(bucket, title)
+func delete(tx *bolt.Tx, title string) (*m.Task, error) {
+	taskBucket := tx.Bucket(m.TaskBucketName)
+	sessionBucket := tx.Bucket(m.SessionBucketName)
+	taskSessionBucket := tx.Bucket(m.TaskSessionBucketName)
+
+	exist, v, err := h.IsTaskExist(taskBucket, title)
 	if !exist {
 		return nil, err
 	}
@@ -85,7 +84,22 @@ func delete(bucket *bolt.Bucket, title string) (*m.Task, error) {
 		return nil, err
 	}
 
-	err = bucket.Delete(m.TaskKey(title))
+	err = taskBucket.Delete(m.TaskKey(title))
+
+	if err != nil {
+		return nil, err
+	}
+	taskSessionKeys, sessionKeys := taskSessionDB.GetTaskSessionKeysByTask(taskSessionBucket, title)
+
+	err = taskSessionDB.BatchDeleteTaskSessions(taskSessionBucket, taskSessionKeys)
+	if err != nil {
+		return nil, err
+	}
+	err = sessionDB.BatchDeleteSessions(sessionBucket, sessionKeys)
+	if err != nil {
+		return nil, err
+	}
+
 	return &task, err
 }
 
@@ -117,8 +131,7 @@ func DeleteTask(title string) (*m.Task, error) {
 	var task *m.Task
 	var err error
 	err = m.TTTDB.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(m.TaskBucketName)
-		task, err = delete(bucket, title)
+		task, err = delete(tx, title)
 		return err
 	})
 	return task, err
@@ -181,14 +194,13 @@ func BatchCompleteTasks(titles []string) ([]*m.Task, error) {
 func BatchDeleteTasks(titles []string) ([]*m.Task, error) {
 	tasks := make([]*m.Task, len(titles))
 	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(m.TaskBucketName)
 
 		g := new(errgroup.Group)
 
 		for i, title := range titles {
 			func(i int, title string) {
 				g.Go(func() error {
-					task, err := delete(bucket, title)
+					task, err := delete(tx, title)
 					tasks[i] = task
 					return err
 				})

@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	TaskDB "github.com/xindixu/todo-time-tracker/db/tasks"
+	h "github.com/xindixu/todo-time-tracker/db/helper"
 	m "github.com/xindixu/todo-time-tracker/models"
+	"golang.org/x/sync/errgroup"
 )
 
 func Setup() error {
@@ -31,7 +32,7 @@ func update(bucket *bolt.Bucket, session *m.Session) error {
 
 func start(tx *bolt.Tx, started time.Time, task string) (*m.Session, error) {
 	taskBucket := tx.Bucket(m.TaskBucketName)
-	exist, _, err := TaskDB.IsTaskExist(taskBucket, task)
+	exist, _, err := h.IsTaskExist(taskBucket, task)
 	if !exist {
 		return nil, err
 	}
@@ -71,6 +72,25 @@ func HasActiveSession(bucket *bolt.Bucket) (bool, []byte, error) {
 	}
 	return false, v, fmt.Errorf("no active session")
 }
+
+func BatchDeleteSessions(bucket *bolt.Bucket, sessionKeys [][]byte) error {
+	g := new(errgroup.Group)
+
+	for _, key := range sessionKeys {
+		func(key []byte) {
+			g.Go(func() error {
+				return bucket.Delete(key)
+			})
+		}(key)
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// -----------------------------------
 
 func StartSession(started time.Time, task string) (*m.Session, error) {
 	var session *m.Session
