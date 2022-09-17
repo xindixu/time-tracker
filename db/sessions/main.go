@@ -1,4 +1,4 @@
-package taskDB
+package sessionDB
 
 import (
 	"encoding/json"
