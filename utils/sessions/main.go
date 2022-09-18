@@ -9,11 +9,11 @@ import (
 )
 
 func Format(session m.Session) string {
-	end := "???"
+	end := "Now"
 	if !session.Ended.IsZero() {
-		end = session.Ended.Format(time.RubyDate)
+		end = session.Ended.Format(time.UnixDate)
 	}
-	return fmt.Sprintf("%v - %v:  %v", session.Started.Format(time.RubyDate), end, session.Task)
+	return fmt.Sprintf("%v - %v:  %v", session.Started.Format(time.UnixDate), end, session.Task)
 }
 
 func ActionWithErrorHandling(action func() (*m.Session, error)) *m.Session {
