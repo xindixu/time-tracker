@@ -11,22 +11,17 @@ import (
 )
 
 func addBatch(args []string) {
-	fmt.Printf("Adding task(s): %s...\n", strings.Join(args, ", "))
-
 	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*m.Task, error) { return taskDB.BatchAddTasks(args) })
 
-	fmt.Printf("Added task(s):\n")
-	for i, task := range tasks {
-		fmt.Printf("%v. %v\n", i+1, taskUtil.Format(*task))
-	}
+	taskUtil.PrintList(tasks, "Added task(s)")
 }
 
 func addOne(args []string) {
 	title := strings.Join(args, " ")
-	fmt.Printf("Adding task: %s...\n", title)
 
 	task := taskUtil.ActionWithErrorHandling(func() (*m.Task, error) { return taskDB.AddTask(title) })
-	fmt.Printf("Added task: %v\n", taskUtil.Format(*task))
+
+	taskUtil.Print(task, "Added task")
 }
 
 // addCmd represents the add command
@@ -34,6 +29,9 @@ var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a task or a list of tasks",
 	Args:  cobra.MinimumNArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Adding tasks...\n")
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		batch, _ := cmd.Flags().GetBool("batch")
 		if batch {
