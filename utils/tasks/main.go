@@ -31,7 +31,7 @@ func PrintList(tasks []*m.Task, message string) {
 func ActionWithErrorHandling(action func() (*m.Task, error)) *m.Task {
 	task, err := action()
 	if err != nil {
-		fmt.Printf("Something went wrong:\n%s\n", err)
+		fmt.Printf("Aborted command due to:\n%s\n", err)
 		os.Exit(1)
 	}
 	return task
@@ -40,7 +40,7 @@ func ActionWithErrorHandling(action func() (*m.Task, error)) *m.Task {
 func BatchActionWithErrorHandling(action func() ([]*m.Task, error)) []*m.Task {
 	tasks, err := action()
 	if err != nil {
-		fmt.Printf("Something went wrong:\n%s\n", err)
+		fmt.Printf("Aborted command due to:\n%s\n", err)
 		os.Exit(1)
 	}
 	return tasks

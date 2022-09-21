@@ -7,10 +7,12 @@ import (
 	"github.com/spf13/cobra"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
 	m "github.com/xindixu/todo-time-tracker/models"
+	helperUtils "github.com/xindixu/todo-time-tracker/utils/helper"
 	taskUtil "github.com/xindixu/todo-time-tracker/utils/tasks"
 )
 
 func addBatch(args []string) {
+	args = helperUtils.Dedup(args)
 	tasks := taskUtil.BatchActionWithErrorHandling(func() ([]*m.Task, error) { return taskDB.BatchAddTasks(args) })
 
 	taskUtil.PrintList(tasks, "Added task(s)")

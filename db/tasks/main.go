@@ -141,7 +141,6 @@ func DeleteTask(title string) (*m.Task, error) {
 
 func BatchAddTasks(titles []string) ([]*m.Task, error) {
 	tasks := make([]*m.Task, len(titles))
-
 	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(m.TaskBucketName)
 

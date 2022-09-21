@@ -19,7 +19,7 @@ func Format(session m.Session) string {
 func ActionWithErrorHandling(action func() (*m.Session, error)) *m.Session {
 	session, err := action()
 	if err != nil {
-		fmt.Printf("Something went wrong:\n%s\n", err)
+		fmt.Printf("Aborted command due to:\n%s\n", err)
 		os.Exit(1)
 	}
 	return session
