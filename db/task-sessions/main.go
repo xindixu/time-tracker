@@ -7,7 +7,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	m "github.com/xindixu/todo-time-tracker/models"
-	"golang.org/x/sync/errgroup"
 )
 
 func Setup() error {
@@ -52,18 +51,8 @@ func GetTaskSessionKeysByTask(bucket *bolt.Bucket, task string) ([][]byte, [][]b
 }
 
 func BatchDeleteTaskSessions(bucket *bolt.Bucket, taskSessionKeys [][]byte) error {
-	g := new(errgroup.Group)
-
 	for _, key := range taskSessionKeys {
-		func(key []byte) {
-			g.Go(func() error {
-				return bucket.Delete(key)
-			})
-		}(key)
-	}
-
-	if err := g.Wait(); err != nil {
-		return err
+		return bucket.Delete(key)
 	}
 	return nil
 }

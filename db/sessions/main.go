@@ -8,7 +8,6 @@ import (
 	"github.com/boltdb/bolt"
 	h "github.com/xindixu/todo-time-tracker/db/helper"
 	m "github.com/xindixu/todo-time-tracker/models"
-	"golang.org/x/sync/errgroup"
 )
 
 func Setup() error {
@@ -74,18 +73,8 @@ func HasActiveSession(bucket *bolt.Bucket) (bool, []byte, error) {
 }
 
 func BatchDeleteSessions(bucket *bolt.Bucket, sessionKeys [][]byte) error {
-	g := new(errgroup.Group)
-
 	for _, key := range sessionKeys {
-		func(key []byte) {
-			g.Go(func() error {
-				return bucket.Delete(key)
-			})
-		}(key)
-	}
-
-	if err := g.Wait(); err != nil {
-		return err
+		return bucket.Delete(key)
 	}
 	return nil
 }

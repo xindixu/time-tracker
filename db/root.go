@@ -6,6 +6,7 @@ import (
 	taskSessionDB "github.com/xindixu/todo-time-tracker/db/task-sessions"
 	taskDB "github.com/xindixu/todo-time-tracker/db/tasks"
 	m "github.com/xindixu/todo-time-tracker/models"
+	"golang.org/x/sync/errgroup"
 )
 
 func InitDB() error {
@@ -15,19 +16,11 @@ func InitDB() error {
 		return err
 	}
 
-	err = taskDB.Setup()
-	if err != nil {
-		return err
-	}
+	g := new(errgroup.Group)
+	g.Go(func() error { return taskDB.Setup() })
+	g.Go(func() error { return sessionDB.Setup() })
+	g.Go(func() error { return taskSessionDB.Setup() })
 
-	err = sessionDB.Setup()
-	if err != nil {
-		return err
-	}
+	return g.Wait()
 
-	err = taskSessionDB.Setup()
-	if err != nil {
-		return err
-	}
-	return err
 }

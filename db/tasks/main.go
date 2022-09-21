@@ -11,7 +11,6 @@ import (
 	sessionDB "github.com/xindixu/todo-time-tracker/db/sessions"
 	taskSessionDB "github.com/xindixu/todo-time-tracker/db/task-sessions"
 	m "github.com/xindixu/todo-time-tracker/models"
-	"golang.org/x/sync/errgroup"
 )
 
 func Setup() error {
@@ -140,25 +139,19 @@ func DeleteTask(title string) (*m.Task, error) {
 // -----------------------------------
 
 func BatchAddTasks(titles []string) ([]*m.Task, error) {
+
 	tasks := make([]*m.Task, len(titles))
+
 	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(m.TaskBucketName)
 
-		g := new(errgroup.Group)
-
 		for i, title := range titles {
-			func(i int, title string) {
-				g.Go(func() error {
-					task, err := add(bucket, title)
-					tasks[i] = task
-					return err
-				})
-			}(i, title)
+			task, err := add(bucket, title)
+			tasks[i] = task
+			if err != nil {
+				return err
+			}
 		}
-		if err := g.Wait(); err != nil {
-			return err
-		}
-
 		return nil
 	})
 
@@ -166,25 +159,19 @@ func BatchAddTasks(titles []string) ([]*m.Task, error) {
 }
 
 func BatchCompleteTasks(titles []string) ([]*m.Task, error) {
+
 	tasks := make([]*m.Task, len(titles))
+
 	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(m.TaskBucketName)
 
-		g := new(errgroup.Group)
-
 		for i, title := range titles {
-			func(i int, title string) {
-				g.Go(func() error {
-					task, err := complete(bucket, title)
-					tasks[i] = task
-					return err
-				})
-			}(i, title)
+			task, err := complete(bucket, title)
+			tasks[i] = task
+			if err != nil {
+				return err
+			}
 		}
-		if err := g.Wait(); err != nil {
-			return err
-		}
-
 		return nil
 	})
 	return tasks, err
@@ -192,23 +179,15 @@ func BatchCompleteTasks(titles []string) ([]*m.Task, error) {
 
 func BatchDeleteTasks(titles []string) ([]*m.Task, error) {
 	tasks := make([]*m.Task, len(titles))
+
 	err := m.TTTDB.Batch(func(tx *bolt.Tx) error {
-
-		g := new(errgroup.Group)
-
 		for i, title := range titles {
-			func(i int, title string) {
-				g.Go(func() error {
-					task, err := delete(tx, title)
-					tasks[i] = task
-					return err
-				})
-			}(i, title)
+			task, err := delete(tx, title)
+			tasks[i] = task
+			if err != nil {
+				return err
+			}
 		}
-		if err := g.Wait(); err != nil {
-			return err
-		}
-
 		return nil
 	})
 	return tasks, err
