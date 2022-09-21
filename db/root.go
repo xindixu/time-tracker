@@ -9,9 +9,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func InitDB() error {
+func InitDB(fileName string) error {
 	var err error
-	m.TTTDB, err = bolt.Open("todo-time-tracker.db", 0600, nil)
+	m.TTTDB, err = bolt.Open(fileName, 0600, nil)
 	if err != nil {
 		return err
 	}
@@ -22,5 +22,8 @@ func InitDB() error {
 	g.Go(func() error { return taskSessionDB.Setup() })
 
 	return g.Wait()
+}
 
+func CloseDB() error {
+	return m.TTTDB.Close()
 }

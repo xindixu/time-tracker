@@ -9,6 +9,6 @@ import (
 )
 
 func main() {
-	db.InitDB()
+	db.InitDB("todo-time-tracker.db")
 	cmd.Execute()
 }

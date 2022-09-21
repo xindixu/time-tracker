@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -39,7 +38,7 @@ var logCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(logCmd)
+	RootCmd.AddCommand(logCmd)
 
 	// Here you will define your flags and configuration settings.
 

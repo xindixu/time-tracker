@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -30,7 +29,7 @@ var currentCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(currentCmd)
+	RootCmd.AddCommand(currentCmd)
 
 	// Here you will define your flags and configuration settings.
 

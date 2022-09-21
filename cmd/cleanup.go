@@ -1,6 +1,5 @@
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -49,7 +48,7 @@ var cleanupCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(cleanupCmd)
+	RootCmd.AddCommand(cleanupCmd)
 
 	// Here you will define your flags and configuration settings.
 
