@@ -1,32 +1,20 @@
-package test_test
+package test
 
 import (
-	"os"
 	"testing"
 
-	"bou.ke/monkey"
 	"github.com/stretchr/testify/assert"
 	. "github.com/xindixu/todo-time-tracker/cmd"
-	"github.com/xindixu/todo-time-tracker/db"
 	"github.com/zenizh/go-capturer"
 )
-
-var testDB string = "todo-time-tracker-test.db"
-
-func setup() {
-	db.InitDB(testDB)
-}
-
-func teardown() {
-	db.CloseDB()
-	os.Remove(testDB)
-}
 
 func TestAddTaskSuccess(t *testing.T) {
 	setup()
 	defer teardown()
 
-	for _, test := range []struct {
+	addTests([]string{"jogging"})
+
+	tests := []struct {
 		args     []string
 		expected string
 	}{
@@ -36,7 +24,9 @@ func TestAddTaskSuccess(t *testing.T) {
 		{
 			[]string{"swimming for 1 hr"}, "swimming for 1 hr",
 		},
-	} {
+	}
+
+	for _, test := range tests {
 		args := append([]string{"add"}, test.args...)
 		RootCmd.SetArgs(args)
 
@@ -53,7 +43,9 @@ func TestBulkAddTaskSuccess(t *testing.T) {
 	setup()
 	defer teardown()
 
-	for _, test := range []struct {
+	addTests([]string{"swimming"})
+
+	tests := []struct {
 		args     []string
 		expected string
 	}{
@@ -63,7 +55,9 @@ func TestBulkAddTaskSuccess(t *testing.T) {
 		{
 			[]string{"sleeping", "jogging"}, "1. sleeping\n2. jogging",
 		},
-	} {
+	}
+
+	for _, test := range tests {
 		args := append([]string{"add", "-b"}, test.args...)
 		RootCmd.SetArgs(args)
 
@@ -80,24 +74,15 @@ func TestAddTaskFailure(t *testing.T) {
 	setup()
 	defer teardown()
 
-	fakeExit := func(int) {
-		panic("exit called")
+	addTests([]string{"swimming", "jogging"})
+
+	tests := [][]string{
+		{"swimming"},
+		{"jogging"},
 	}
 
-	patch := monkey.Patch(os.Exit, fakeExit)
-	defer patch.Unpatch()
-
-	RootCmd.SetArgs([]string{"add", "swimming"})
-	RootCmd.Execute()
-
-	for _, test := range []struct {
-		args []string
-	}{
-		{
-			[]string{"swimming"},
-		},
-	} {
-		args := append([]string{"add"}, test.args...)
+	for _, test := range tests {
+		args := append([]string{"add"}, test...)
 		RootCmd.SetArgs(args)
 
 		out := capturer.CaptureOutput(func() {
@@ -113,27 +98,15 @@ func TestBulkAddTaskFailure(t *testing.T) {
 	setup()
 	defer teardown()
 
-	fakeExit := func(int) {
-		panic("exit called")
+	addTests([]string{"swimming"})
+
+	tests := [][]string{
+		{"swimming", "jogging"},
+		{"jogging", "swimming"},
 	}
 
-	patch := monkey.Patch(os.Exit, fakeExit)
-	defer patch.Unpatch()
-
-	RootCmd.SetArgs([]string{"add", "swimming"})
-	RootCmd.Execute()
-
-	for _, test := range []struct {
-		args []string
-	}{
-		{
-			[]string{"swimming", "jogging"},
-		},
-		{
-			[]string{"jogging", "swimming"},
-		},
-	} {
-		args := append([]string{"add", "-b"}, test.args...)
+	for _, test := range tests {
+		args := append([]string{"add", "-b"}, test...)
 		RootCmd.SetArgs(args)
 
 		out := capturer.CaptureOutput(func() {
