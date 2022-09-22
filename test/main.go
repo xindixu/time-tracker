@@ -4,8 +4,9 @@ import (
 	"os"
 
 	"bou.ke/monkey"
-	"github.com/xindixu/todo-time-tracker/cmd"
+	. "github.com/xindixu/todo-time-tracker/cmd"
 	"github.com/xindixu/todo-time-tracker/db"
+	"github.com/zenizh/go-capturer"
 )
 
 var testDB string = "todo-time-tracker-test.db"
@@ -28,7 +29,15 @@ func teardown() {
 	patch.Unpatch()
 }
 
-func addTests(tasks []string) {
-	cmd.RootCmd.SetArgs(append([]string{"add", "-b"}, tasks...))
-	cmd.RootCmd.Execute()
+func addTasks(tasks []string) {
+	RootCmd.SetArgs(append([]string{"add", "-b"}, tasks...))
+	RootCmd.Execute()
+}
+
+func getTasks() string {
+	RootCmd.SetArgs([]string{"list", "-a"})
+	out := capturer.CaptureOutput(func() {
+		RootCmd.Execute()
+	})
+	return out
 }

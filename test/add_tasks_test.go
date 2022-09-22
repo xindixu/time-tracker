@@ -12,22 +12,16 @@ func TestAddTaskSuccess(t *testing.T) {
 	setup()
 	defer teardown()
 
-	addTests([]string{"jogging"})
+	addTasks([]string{"jogging"})
 
-	tests := []struct {
-		args     []string
-		expected string
-	}{
-		{
-			[]string{"swimming"}, "swimming",
-		},
-		{
-			[]string{"swimming for 1 hr"}, "swimming for 1 hr",
-		},
+	tests := [][]string{
+		{"swimming"},
+		{"swimming for 1 hr"},
 	}
 
+	// Add tasks and test output
 	for _, test := range tests {
-		args := append([]string{"add"}, test.args...)
+		args := append([]string{"add"}, test...)
 		RootCmd.SetArgs(args)
 
 		out := capturer.CaptureOutput(func() {
@@ -35,7 +29,17 @@ func TestAddTaskSuccess(t *testing.T) {
 		})
 
 		assert.Contains(t, out, "Added task")
-		assert.Contains(t, out, test.expected)
+		for _, task := range test {
+			assert.Contains(t, out, task)
+		}
+	}
+
+	// Test if tasks are added to db
+	allTasks := getTasks()
+	for _, test := range tests {
+		for _, task := range test {
+			assert.Contains(t, allTasks, task)
+		}
 	}
 }
 
@@ -43,22 +47,16 @@ func TestBulkAddTaskSuccess(t *testing.T) {
 	setup()
 	defer teardown()
 
-	addTests([]string{"swimming"})
+	addTasks([]string{"swimming"})
 
-	tests := []struct {
-		args     []string
-		expected string
-	}{
-		{
-			[]string{"eating"}, "1. eating",
-		},
-		{
-			[]string{"sleeping", "jogging"}, "1. sleeping\n2. jogging",
-		},
+	tests := [][]string{
+		{"eating"},
+		{"sleeping", "jogging"},
 	}
 
+	// Add tasks and test output
 	for _, test := range tests {
-		args := append([]string{"add", "-b"}, test.args...)
+		args := append([]string{"add", "-b"}, test...)
 		RootCmd.SetArgs(args)
 
 		out := capturer.CaptureOutput(func() {
@@ -66,7 +64,18 @@ func TestBulkAddTaskSuccess(t *testing.T) {
 		})
 
 		assert.Contains(t, out, "Added task(s)")
-		assert.Contains(t, out, test.expected)
+
+		for _, task := range test {
+			assert.Contains(t, out, task)
+		}
+	}
+
+	// Test if tasks are added to db
+	allTasks := getTasks()
+	for _, test := range tests {
+		for _, task := range test {
+			assert.Contains(t, allTasks, task)
+		}
 	}
 }
 
@@ -74,7 +83,7 @@ func TestAddTaskFailure(t *testing.T) {
 	setup()
 	defer teardown()
 
-	addTests([]string{"swimming", "jogging"})
+	addTasks([]string{"swimming", "jogging"})
 
 	tests := [][]string{
 		{"swimming"},
@@ -98,7 +107,7 @@ func TestBulkAddTaskFailure(t *testing.T) {
 	setup()
 	defer teardown()
 
-	addTests([]string{"swimming"})
+	addTasks([]string{"swimming"})
 
 	tests := [][]string{
 		{"swimming", "jogging"},
