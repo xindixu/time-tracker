@@ -32,11 +32,35 @@ Flags:
 Use "ttt [command] --help" for more information about a command.
 ```
 
-1. Add a task:
-- `ttt add exercise`
+### Task related commands
+- Add tasks (`add`) 
 
-2. Add multiple tasks:
-- `ttt add -b jogging swimming`
+  Single | Multiple
+  --- | ---
+  `ttt add yoga` | `ttt add -b jogging swimming`
+  `ttt add yoga for 1 hr` | `ttt add -b "jogging for 1 hr" "swimming for 1 hr"`
+
+- Mark tests as complete (`done`)
+
+  Single | Multiple
+  --- | ---
+  `ttt done yoga` | `ttt done -b jogging swimming`
+  `ttt done yoga for 1 hr` | `ttt done -b "jogging for 1 hr" "swimming for 1 hr"`
+
+- Delete tasks (`delete`)
+
+  Single | Multiple
+  --- | ---
+  `ttt delete yoga` | `ttt delete -b jogging swimming`
+  `ttt delete yoga for 1 hr` | `ttt delete -b "jogging for 1 hr" "swimming for 1 hr"`
+
+- List tasks (`list`)
+
+  Incomplete Only | All
+  --- | ---
+  `ttt list` | `ttt list -a`
 
 
 ## Library used
+- BoltDB
+- Cobra
