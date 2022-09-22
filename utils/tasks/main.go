@@ -10,7 +10,7 @@ import (
 func Format(task m.Task) string {
 	completed := ""
 	if !task.Completed.IsZero() {
-		completed = "  (done)"
+		completed = " ✓"
 	}
 
 	return fmt.Sprintf("%v%v", task.Title, completed)

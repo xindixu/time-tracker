@@ -18,7 +18,7 @@ func TestFormat1(t *testing.T) {
 		Title:     "learn go",
 	}
 
-	expected := "learn go  (done)"
+	expected := "learn go ✓"
 	s := tasksUtils.Format(task)
 	if s != expected {
 		t.Errorf("\nExpected: %s\nGot: %s", expected, s)
