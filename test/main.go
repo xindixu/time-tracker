@@ -41,3 +41,15 @@ func getTasks() string {
 	})
 	return out
 }
+
+func completeTasks(tasks []string) {
+	RootCmd.SetArgs(append([]string{"done", "-b"}, tasks...))
+	RootCmd.Execute()
+}
+
+func deleteTasks(tasks []string) {
+	RootCmd.SetArgs(append([]string{"delete", "-b"}, tasks...))
+	RootCmd.Execute()
+}
+
+var tasks = []string{"swimming", "swimming for 1 hr", "sleeping", "jogging"}

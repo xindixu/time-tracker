@@ -60,7 +60,7 @@ func complete(bucket *bolt.Bucket, title string) (*m.Task, error) {
 		return nil, err
 	}
 	if !task.Completed.IsZero() {
-		return nil, fmt.Errorf("task \"%s\" is already marked as complete", title)
+		return nil, fmt.Errorf("task \"%s\" is already marked as completed", title)
 	}
 	task.Completed = time.Now()
 	err = update(bucket, &task)
