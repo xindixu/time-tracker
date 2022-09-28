@@ -1,7 +1,6 @@
 package test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -140,8 +139,6 @@ func TestRepeatedDeleteTaskFailure(t *testing.T) {
 			deleteTasks(test)
 		})
 	})
-
-	fmt.Printf("                   our %v\n", out)
 
 	assert.Contains(t, out, "Aborted")
 	assert.Contains(t, out, "not found")

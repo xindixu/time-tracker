@@ -9,8 +9,6 @@ import (
 	"github.com/zenizh/go-capturer"
 )
 
-var tasks = []string{"swimming", "swimming for 1 hr", "sleeping", "jogging"}
-
 func TestCompleteTaskSuccess(t *testing.T) {
 	setup()
 	defer teardown()
@@ -127,4 +125,22 @@ func TestBulkCompleteTaskFailure(t *testing.T) {
 		assert.Contains(t, out, "Aborted")
 		assert.Contains(t, out, "not found")
 	}
+}
+
+func TestRepeatedCompleteTaskFailure(t *testing.T) {
+	setup()
+	defer teardown()
+
+	addTasks(tasks)
+	test := tasks[0:1]
+	completeTasks(test)
+
+	out := capturer.CaptureOutput(func() {
+		assert.Panics(t, func() {
+			completeTasks(test)
+		})
+	})
+
+	assert.Contains(t, out, "Aborted")
+	assert.Contains(t, out, "already marked as completed")
 }
