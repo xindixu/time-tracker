@@ -15,4 +15,6 @@
 # vendor/
 
 *.db
+.DS_Store
+
 ttt
